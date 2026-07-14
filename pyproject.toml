@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "droidforensicx"
+version = "0.1.0"
+description = "Free Android Defence Forensic Triage & Reporting Framework"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [{name = "Faysal Ferdous"}]
+dependencies = [
+  "typer>=0.12",
+  "rich>=13.7",
+  "jinja2>=3.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.5"]
+
+[project.scripts]
+droidforensicx = "droidforensicx.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["droidforensicx*"]
+
+[tool.setuptools.package-data]
+droidforensicx = ["templates/*.j2"]
+
+[tool.ruff]
+line-length = 140
+target-version = "py311"

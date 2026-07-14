@@ -1,0 +1,118 @@
+# DroidForensicX Forensic Triage Report
+
+Case: `{{ case_id }}`
+Tool version: `{{ tool_version }}`
+
+## 1. Executive Summary
+
+This case was processed with DroidForensicX for authorized Android logical forensic triage. The workflow organizes raw evidence, hashes outputs, identifies app lifecycle traces, generates suspicious indicators, creates a unified timeline, and produces redacted professional reports.
+
+| Metric | Value |
+| --- | ---: |
+| Risk level | {{ risk_summary.risk_level | default("Not calculated") }} |
+| Apps parsed | {{ metrics.apps }} |
+| Uninstalled app leads | {{ metrics.uninstalled }} |
+| Suspicious indicators | {{ metrics.indicators }} |
+| Risky permissions | {{ metrics.dangerous_permissions }} |
+| Credential rows, redacted | {{ metrics.credentials }} |
+| Timeline events | {{ metrics.timeline }} |
+| Hashed files | {{ metrics.hashed_files }} |
+
+## 2. Authorization Note
+
+This framework is for authorized DFIR, SOC, incident response, and defence investigation use only. It does not exploit, root, bypass, dump, decrypt, or steal passwords.
+
+## 3. Device Identity
+
+{% if device_props %}
+{% for key, value in device_props.items() %}- `{{ key }}`: `{{ value }}`
+{% endfor %}
+{% else %}
+Device identity was not collected or no device was connected.
+{% endif %}
+
+## 4. Acquisition Method
+
+Logical ADB-safe collection and lawful imported artifacts. Destructive commands are not used. Logs are not cleared. Device settings are not changed.
+
+## 5. Tool Versions
+
+{% for name, info in tools.items() %}- `{{ name }}`: {{ "available" if info.available else "missing" }} {{ info.path }}
+{% endfor %}
+
+## 6. Evidence Integrity
+
+Hashed files: {{ metrics.hashed_files }}
+
+## 7. Installed Apps
+
+{% for app in apps[:80] %}- `{{ app.package }}` installer=`{{ app.installer }}` version=`{{ app.version_name }}`
+{% else %}No app inventory generated.
+{% endfor %}
+
+## 8. Uninstalled App Traces
+
+Android does not guarantee permanent uninstall history. Confidence levels reflect trace strength.
+
+{% for row in uninstalled[:80] %}- `{{ row.package }}` — `{{ row.confidence }}` — {{ row.evidence }}
+{% else %}No uninstalled app candidates were generated.
+{% endfor %}
+
+## 9. Risky Permissions
+
+{% for row in dangerous[:120] %}- `{{ row.package }}` requested `{{ row.permission }}`
+{% else %}No dangerous permission output was generated.
+{% endfor %}
+
+## 10. Suspicious Indicators
+
+{% for row in indicators %}- **{{ row.severity }}** `{{ row.indicator }}`: {{ row.evidence }} (score {{ row.score }})
+{% else %}No suspicious indicators were generated.
+{% endfor %}
+
+## 11. User Goal / Intent Analysis
+
+Goal indicators are conservative and are based only on lawful imports and visible artifact names. They are leads, not conclusions.
+
+## 12. Browser/Web Artifacts
+
+Browser and web artifacts are included only when lawfully imported or visible from logical shared storage outputs.
+
+## 13. Credential Evidence, Redacted
+
+DroidForensicX does not extract, decrypt, dump, or bypass passwords. It only imports lawfully provided credential exports and redacts secrets by default.
+
+Credential records imported: {{ credential_summary.records | default(0) }}
+
+{% for row in credentials[:30] %}- `{{ row.domain }}` user=`{{ row.username }}` password=`{{ row.password }}`
+{% else %}No credential import output was generated.
+{% endfor %}
+
+## 14. Social Media Imported Artifacts
+
+Social artifact files: {{ social_summary.files_imported | default(0) }}. Private app database bypass was not performed.
+
+## 15. Media Findings
+
+Media files indexed: {{ media_summary.media_files | default(0) }}
+
+## 16. Deleted Media / External SD Notes
+
+No-root logical triage cannot guarantee recovery of deleted internal Android files. External SD or shared storage recovery requires lawful access and separate specialist workflow.
+
+## 17. Timeline
+
+{% for row in timeline[:120] %}- `{{ row.timestamp }}` **{{ row.source }}** {{ row.event_type }} {{ row.artifact }}
+{% else %}No unified timeline events were generated.
+{% endfor %}
+
+## 18. Limitations
+
+{% for item in limitations %}- {{ item }}
+{% endfor %}
+
+## 19. Hash Appendix
+
+```text
+{{ hashes_text }}
+```

@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DroidForensicX Report - DEMO-ANDROID-FORENSIC</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --ink: #172033;
+      --muted: #5b667a;
+      --line: #d9e0ea;
+      --panel: #ffffff;
+      --brand: #123047;
+      --brand-2: #0f766e;
+      --danger: #b42318;
+      --warn: #b45309;
+      --ok: #047857;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; }
+    header { background: linear-gradient(135deg, #102033 0%, #123047 58%, #0f766e 100%); color: white; padding: 34px 42px 28px; border-bottom: 5px solid #0f766e; }
+    header .kicker { text-transform: uppercase; letter-spacing: .08em; font-size: 12px; opacity: .82; font-weight: 700; }
+    h1 { margin: 8px 0 8px; font-size: 34px; line-height: 1.1; letter-spacing: 0; }
+    h2 { margin: 0 0 14px; font-size: 20px; letter-spacing: 0; }
+    h3 { margin: 16px 0 8px; font-size: 15px; letter-spacing: 0; }
+    p { line-height: 1.55; }
+    main { max-width: 1220px; margin: 0 auto; padding: 26px; }
+    section { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 22px; margin-bottom: 18px; box-shadow: 0 1px 2px rgba(16, 24, 40, .04); }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { border-bottom: 1px solid #e6ebf2; padding: 9px 8px; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+    th { background: #f3f6fa; color: #334155; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; }
+    code { background: #eef3f8; color: #0f172a; padding: 2px 5px; border-radius: 4px; }
+    pre { white-space: pre-wrap; background: #101828; color: #e5edf7; padding: 14px; border-radius: 6px; max-height: 360px; overflow: auto; }
+    .subhead { color: rgba(255,255,255,.84); max-width: 900px; margin: 0; }
+    .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
+    .card { background: white; border: 1px solid var(--line); border-radius: 8px; padding: 16px; }
+    .card .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; font-weight: 700; }
+    .card .value { font-size: 28px; font-weight: 800; margin-top: 6px; color: var(--brand); }
+    .badge { display: inline-block; padding: 5px 9px; border-radius: 999px; font-size: 12px; font-weight: 800; border: 1px solid transparent; }
+    .badge-high { background: #fee4e2; color: var(--danger); border-color: #fecdca; }
+    .badge-medium { background: #fef0c7; color: var(--warn); border-color: #fedf89; }
+    .badge-low { background: #dcfae6; color: var(--ok); border-color: #abefc6; }
+    .note { color: var(--muted); margin: 0 0 12px; }
+    .callout { border-left: 4px solid var(--brand-2); background: #f0fdfa; padding: 12px 14px; border-radius: 6px; color: #134e4a; }
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    footer { color: var(--muted); font-size: 12px; text-align: center; padding: 20px 0 34px; }
+    @media (max-width: 900px) { .grid, .two { grid-template-columns: 1fr; } header { padding: 28px 22px; } main { padding: 18px; } }
+  </style>
+</head>
+<body>
+<header>
+  <div class="kicker">Authorized Android Logical Forensic Triage</div>
+  <h1>DroidForensicX Report</h1>
+  <p class="subhead">Case <strong>DEMO-ANDROID-FORENSIC</strong> | Generated with DroidForensicX 0.1.0 | Secrets redacted by default</p>
+</header>
+<main>
+  <section>
+    <h2>Executive Summary</h2>
+    <p class="callout">DroidForensicX does not extract, decrypt, dump, or bypass passwords. It only imports lawfully provided credential exports and redacts secrets by default.</p>
+    <div class="grid">
+      <div class="card"><div class="label">Risk Level</div><div class="value"><span class="badge badge-high">HIGH</span></div></div>
+      <div class="card"><div class="label">Apps Parsed</div><div class="value">2</div></div>
+      <div class="card"><div class="label">Uninstalled Leads</div><div class="value">1</div></div>
+      <div class="card"><div class="label">Indicators</div><div class="value">6</div></div>
+      <div class="card"><div class="label">Risky Permissions</div><div class="value">6</div></div>
+      <div class="card"><div class="label">Credential Rows</div><div class="value">3</div></div>
+      <div class="card"><div class="label">Timeline Events</div><div class="value">9</div></div>
+      <div class="card"><div class="label">Hashed Files</div><div class="value">48</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Authorization and Scope</h2>
+    <p>This report is intended for authorized DFIR, SOC, incident response, and defence investigation use only. The acquisition method is logical and non-destructive. The report should be interpreted with the stated limitations and chain-of-custody records.</p>
+  </section>
+
+  <div class="two">
+    <section>
+      <h2>Device Identity</h2>
+      <table><tr><th>ro.build.fingerprint</th><td>google/demo/demo:16/SYNTHETIC:user/release-keys</td></tr><tr><th>ro.build.version.release</th><td>16</td></tr><tr><th>ro.product.manufacturer</th><td>Google</td></tr><tr><th>ro.product.model</th><td>Pixel Synthetic Demo</td></tr></table>
+    </section>
+    <section>
+      <h2>Tool Availability</h2>
+      <table><tr><th>Tool</th><th>Status</th><th>Path</th></tr><tr><td>adb</td><td>missing</td><td></td></tr><tr><td>androidqf</td><td>missing</td><td></td></tr><tr><td>mvt-android</td><td>missing</td><td></td></tr><tr><td>aleapp</td><td>missing</td><td></td></tr><tr><td>exiftool</td><td>available</td><td>/bin/exiftool</td></tr><tr><td>mediainfo</td><td>missing</td><td></td></tr><tr><td>photorec</td><td>missing</td><td></td></tr><tr><td>testdisk</td><td>missing</td><td></td></tr><tr><td>hashdeep</td><td>available</td><td>/bin/hashdeep</td></tr></table>
+    </section>
+  </div>
+
+  <section>
+    <h2>Suspicious Indicators</h2>
+    <p class="note">Indicators are triage leads. Validate each finding against raw evidence before drawing conclusions.</p>
+    <table><tr><th>Severity</th><th>Indicator</th><th>Evidence</th><th>Score</th></tr><tr><td><span class="badge badge-high">HIGH</span></td><td>ADB over TCP indicator</td><td>settings_global contains adb tcp references</td><td>30</td></tr><tr><td><span class="badge badge-medium">MEDIUM</span></td><td>Developer options or ADB enabled</td><td>settings indicate development/ADB enabled</td><td>15</td></tr><tr><td><span class="badge badge-medium">MEDIUM</span></td><td>Unknown/non-store installer</td><td>com.fake.calculator.vault installer=unknown.installer</td><td>10</td></tr><tr><td><span class="badge badge-medium">MEDIUM</span></td><td>Suspicious app naming keyword</td><td>com.fake.calculator.vault</td><td>10</td></tr><tr><td><span class="badge badge-medium">MEDIUM</span></td><td>Multiple dangerous permissions</td><td>com.fake.calculator.vault dangerous_permissions=4</td><td>12</td></tr><tr><td><span class="badge badge-low">LOW</span></td><td>Recently installed/removed app trace candidate</td><td>com.shortlived.proxy CONFIRMED_UNINSTALLED_TRACE</td><td>5</td></tr></table>
+  </section>
+
+  <section>
+    <h2>Installed Apps</h2>
+    <table><tr><th>Package</th><th>Installer</th><th>Version</th><th>First Install</th><th>Last Update</th></tr><tr><td><code>com.android.chrome</code></td><td>com.android.vending</td><td>126.0</td><td>2026-06-01 10:00:00</td><td>2026-07-01 10:00:00</td></tr><tr><td><code>com.fake.calculator.vault</code></td><td>unknown.installer</td><td>2.4</td><td>2026-07-10 13:20:00</td><td>2026-07-10 13:20:00</td></tr></table>
+  </section>
+
+  <section>
+    <h2>Uninstalled App Traces</h2>
+    <p class="note">Android does not guarantee permanent uninstall history. Confidence levels reflect available trace strength.</p>
+    <table><tr><th>Package</th><th>Confidence</th><th>Evidence</th></tr><tr><td><code>com.shortlived.proxy</code></td><td>CONFIRMED_UNINSTALLED_TRACE</td><td>pm list packages -u trace</td></tr></table>
+  </section>
+
+  <section>
+    <h2>Risky Permissions</h2>
+    <table><tr><th>Package</th><th>Permission</th></tr><tr><td><code>com.android.chrome</code></td><td>android.permission.CAMERA</td></tr><tr><td><code>com.android.chrome</code></td><td>android.permission.ACCESS_FINE_LOCATION</td></tr><tr><td><code>com.fake.calculator.vault</code></td><td>android.permission.READ_SMS</td></tr><tr><td><code>com.fake.calculator.vault</code></td><td>android.permission.READ_CONTACTS</td></tr><tr><td><code>com.fake.calculator.vault</code></td><td>android.permission.SYSTEM_ALERT_WINDOW</td></tr><tr><td><code>com.fake.calculator.vault</code></td><td>android.permission.CAMERA</td></tr></table>
+  </section>
+
+  <section>
+    <h2>Credential Evidence, Redacted</h2>
+    <p class="note">Imported records: 3. Raw password values are not shown in this report.</p>
+    <table><tr><th>Domain</th><th>Username</th><th>Password</th></tr><tr><td>mail.example.test</td><td>analyst@example.test</td><td><code>********</code></td></tr><tr><td>cloud.example.test</td><td>analyst@example.test</td><td><code>********</code></td></tr><tr><td>bank.example.test</td><td>user@example.test</td><td><code>********</code></td></tr></table>
+  </section>
+
+  <div class="two">
+    <section><h2>Social Media Imported Artifacts</h2><p>Files imported: 1</p><p class="note">Only lawful exports are imported. Private app database bypass is not performed.</p></section>
+    <section><h2>Media Findings</h2><p>Media files indexed: 2</p><p class="note">Shared-storage indexing depends on lawful access and Android storage restrictions.</p></section>
+  </div>
+
+  <section>
+    <h2>Unified Timeline</h2>
+    <table><tr><th>Timestamp</th><th>Source</th><th>Event</th><th>Artifact</th></tr><tr><td></td><td>credentials_import</td><td>credential_domain_present</td><td>mail.example.test</td></tr><tr><td></td><td>credentials_import</td><td>credential_domain_present</td><td>cloud.example.test</td></tr><tr><td></td><td>credentials_import</td><td>credential_domain_present</td><td>bank.example.test</td></tr><tr><td>07-12 10:22:01.123</td><td>app_lifecycle</td><td>PACKAGE_REMOVED</td><td>com.shortlived.proxy</td></tr><tr><td>12/07/2026, 10:01</td><td>social</td><td>chat_message</td><td></td></tr><tr><td>12/07/2026, 10:05</td><td>social</td><td>chat_message</td><td></td></tr><tr><td>1784022041</td><td>media</td><td>file_mtime</td><td>cases/DEMO-ANDROID-FORENSIC/07_media/synthetic_shared_storage/Download suspicious-vault.apk</td></tr><tr><td>1784022041</td><td>media</td><td>file_mtime</td><td>cases/DEMO-ANDROID-FORENSIC/07_media/synthetic_shared_storage/Documents case-notes.txt</td></tr><tr><td>2026-07-12T10:20:00Z</td><td>app_lifecycle</td><td>lastTimeUsed</td><td>com.shortlived.proxy</td></tr></table>
+  </section>
+
+  <section>
+    <h2>Limitations</h2>
+    <ul><li>DroidForensicX performs authorized logical triage only and does not bypass Android security controls.</li><li>No-root ADB cannot access most app-private databases or guarantee complete deleted-file recovery.</li><li>Android does not guarantee a permanent uninstall history; uninstalled app results are confidence-scored traces.</li><li>Credential handling imports lawful official exports only and redacts password values by default.</li><li>Absence of evidence in this report is not evidence of absence.</li></ul>
+  </section>
+
+  <section>
+    <h2>Hash Appendix</h2>
+    <pre>e1ac3cd26f7f65e9745b120adf68902788de2c8abd0e0024aa4ea8f229054291  00_case/case_manifest.json
+bd1443e84ad2c7bde6bd622e40a547e41bef84696a7c5f15c5c0ec12b9b46e22  00_case/case_notes.md
+70232e7063ad4459da3a561573f2c12e19494a1dfd7b1c2802359e496ae3a177  00_case/chain_of_custody.md
+29405fc188dcd461f614bbd46630a73f8f59d93ad1c9aa0bcc02636854e94fe4  00_case/tool_versions.txt
+58fbe6ce8e9709b12005c86b1a3e242b2c0792782106b6125c7bc0a6f01a7914  01_raw_adb/device_identity.json
+9cb8e23528fa1b3f1b9e4a7b52273c1b091a70003f1dc39bd75ceda92b7fa8b8  01_raw_adb/dumpsys_package.txt
+8b33ad415f7497f4cd0476094f45b1f9cac0152ca1df9ecc57713933c8635b41  01_raw_adb/dumpsys_usagestats.txt
+25957634348896951832c1e620f33c0058b213862393c7ac3c4ea222d90bc7d1  01_raw_adb/logcat_d.txt
+df9430e76d4fbdc38b41952e3212bacf1bbf67af60bbeb24527e6f3db98caecb  01_raw_adb/pm_list_packages.txt
+4781188be2e7c0c9d22a4e0d40a52572d256e7d94884d92f333af6f7ca4e2c5c  01_raw_adb/pm_list_packages_u.txt
+f300285d0e8672f9b2169aa886119f88be23a02f4f70d7a7ec8118d92eb69371  01_raw_adb/settings_global.txt
+962315ccb80241b2a79344f49c6eac45640274760d0bfe01b1ae5c549e38623c  01_raw_adb/settings_secure.txt
+9143c9f868fcb60d1bbe66e0703c6bda7971e5279ddb12e0126628915489db6b  06_apps/apps_current.csv
+820948edc0a2e9987b2678bd5f5965cd9a3cb31c178aee78737d7e6f2bd629bd  06_apps/apps_dangerous_permissions.csv
+54191407bfd537e6a5e9f0fba713b69074553642e42570290eb76efa95741c0c  06_apps/apps_lifecycle.csv
+d6f960fb7ced3ab7f1c9dd9b283e977021fbc0130780af83ba03fffa379f96da  06_apps/apps_lifecycle_summary.json
+93638cc7ca9cfd3b759553ed866417c1ea75732d5c1245cbdd7d5305ec83b096  06_apps/apps_lifecycle_timeline.csv
+820948edc0a2e9987b2678bd5f5965cd9a3cb31c178aee78737d7e6f2bd629bd  06_apps/apps_permissions.csv
+86506e35c73d9da95e175cd9e487a2dec9b620ceeae9f0c54d16d12d72f26e46  06_apps/apps_summary.json
+82d5ab44b5b822026859d5eb7d85f4beea2f04fb9149affe14e26c60250616da  06_apps/apps_uninstalled_candidates.csv
+450fe30f32bc116ec9c6792ce33e672fe3889bd1f3c39825f60c645487303a3d  07_media/media_duplicates.csv
+77bcbb8ec42d5a1441365d49198807ffe6c870b9059045139fd04e43af2dda9c  07_media/media_exif.csv
+13cf2c90a767e1e63684b1a8fbb5badd2e00c8223b9d0e0c536251cfb3913d0e  07_media/media_index.csv
+18a95239eff255e0204701fea299a2e22db6d5c4a2c49c684d1719deb8c8059d  07_media/media_summary.json
+35f049962adb181f8ff067716a384a8bd9b494c571563c8d2f8b37aecab4cbc9  07_media/media_timeline.csv
+81ad8f7dcb6b51301bc327285b5edd484c9c05d2e1c0cabd17ba845f4a9c9a39  07_media/synthetic_shared_storage/Documents case-notes.txt
+8542ca4bb3af25f89e5f3fa4bee8ee7e9a2a17aa5796518a85cda2fafcd38ee3  07_media/synthetic_shared_storage/Download suspicious-vault.apk
+08676cc19ea1fc56dd414ab1cdbc930ca068a7b2eaeebe4cbbd4b2a34635d6b5  08_credentials_sensitive/synthetic_credentials.csv
+0c1c69f78ca4eab582727fef8ce665628dfa78d5334221eed438347737c6d7cf  09_credentials_redacted/credential_domains.csv
+48dc21e54d4779b35be2f0a91abbd994baba6d13a3894637812f5b082a6fc20b  09_credentials_redacted/credential_goal_indicators.csv
+893d5fe31d6892407ef3f82312f1dbaab9cb1c1d0b1452d683c827e1443db060  09_credentials_redacted/credential_reuse_groups.csv
+c01362ba45afec65344a045d54d3351beaf79169a9640432365e8801c8569e75  09_credentials_redacted/credential_risk_summary.json
+812bf6b6f0be7dabfb96c1f804c39f42e60f85c4a6c8af598d4bc76478fadaf9  09_credentials_redacted/credential_sensitive_domains.csv
+e82b62fcc391b06bdb4518b57341a57bdf2df228aafab320d74eae80b99194b7  09_credentials_redacted/credential_usernames.csv
+8d58f5f2e51b44fdff763eeca6267f3c217d0865883b982b17117ea891a1bb2f  09_credentials_redacted/credential_weak_password_indicators.csv
+a3e953bb3a014656dfcaf434d301ce9fe1050ab126e2cdfe994572605baf4472  09_credentials_redacted/credentials_redacted.csv
+135b4bc2121216f0cc9ca873136ee8a052585c0443ad3aafe01279a2ddd09044  10_social_imports/chat_timeline.csv
+aca0bb28682cd10658d84706a922f3ec1f73b93cb0edaa0bbc27ccd9216c1b56  10_social_imports/contacts_mentions.csv
+e4f196112b17b35152fc9115411f436746a6f4e52b927a2844ba870a355d07bc  10_social_imports/social_import_index.csv
+4af7486d98571cb07df4a5960fe4a4f72f84d42dfffe01cb38d727098d69343c  10_social_imports/social_report.json
+882bfb2bb13101cc128af6f49e2676400aa51b9a61fa6b7e8ebcdefcaeb2ab58  10_social_imports/synthetic_whatsapp_export.txt
+99bc87b43071e5f271922082e462269a1d6eb296149749add5f0fcb6808158d4  11_indicators/app_risk_score.json
+113fd2a8f76496943203ed2c3a5555d0f871a09c5e9bc7119157781a1f0177a4  11_indicators/risk_summary.json
+e09ebfd19ab4e3e08b8c7713ad3060a3a939d1887d28b5b22c959c63b5d608ed  11_indicators/suspicious_indicators.csv
+bd2bf16d77c434bca1c923ba59dc1e8b867bed343ed9b06767012edfb11b74aa  12_timeline/timeline.csv
+edb0dff2dafc9735d901c89d8f96194f6c75e09c06bd4a17e5bc43d6f08e9ebc  12_timeline/timeline.html
+b292ef8e2f93963b2534589c11fcd5bdfddd749199c30e9e0a6e7e7358143d15  12_timeline/timeline.md
+ade54b69fbd2d1a14f8739710ede75e1b58b87b9908282d18e15e461244d6072  12_timeline/timeline_summary.json
+</pre>
+  </section>
+</main>
+<footer>DroidForensicX | Authorized logical triage | MIT License</footer>
+</body>
+</html>

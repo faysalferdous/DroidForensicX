@@ -1,0 +1,16 @@
+Package [com.example.safe] (abc):
+  versionName=1.0
+  firstInstallTime=2026-01-01 10:00:00
+  lastUpdateTime=2026-01-02 10:00:00
+  installerPackageName=com.android.vending
+  requested permissions:
+    android.permission.CAMERA
+Package [com.fake.calculator.vault] (def):
+  versionName=2.0
+  firstInstallTime=2026-01-03 10:00:00
+  lastUpdateTime=2026-01-04 10:00:00
+  installerPackageName=unknown.installer
+  requested permissions:
+    android.permission.READ_SMS
+    android.permission.READ_CONTACTS
+

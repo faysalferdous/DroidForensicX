@@ -1,0 +1,17 @@
+# DroidForensicX Executive Summary
+
+Case: `{{ case_id }}`
+
+Risk level: **{{ risk_summary.risk_level | default("Not calculated") }}**
+
+| Metric | Value |
+| --- | ---: |
+| Apps parsed | {{ metrics.apps }} |
+| Uninstalled app leads | {{ metrics.uninstalled }} |
+| Suspicious indicators | {{ metrics.indicators }} |
+| Risky permissions | {{ metrics.dangerous_permissions }} |
+| Credential records imported with redaction | {{ metrics.credentials }} |
+| Timeline events | {{ metrics.timeline }} |
+| Hashed files | {{ metrics.hashed_files }} |
+
+DroidForensicX performs authorized logical triage only. It does not extract, decrypt, dump, or bypass passwords.

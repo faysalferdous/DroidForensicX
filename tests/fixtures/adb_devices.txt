@@ -1,0 +1,4 @@
+List of devices attached
+ABC123	device product:oriole model:Pixel_6 device:oriole transport_id:1
+XYZ999	unauthorized usb:1-2 transport_id:2
+

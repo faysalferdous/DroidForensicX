@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DroidForensicX Report - {{ case_id }}</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --ink: #172033;
+      --muted: #5b667a;
+      --line: #d9e0ea;
+      --panel: #ffffff;
+      --brand: #123047;
+      --brand-2: #0f766e;
+      --danger: #b42318;
+      --warn: #b45309;
+      --ok: #047857;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; }
+    header { background: linear-gradient(135deg, #102033 0%, #123047 58%, #0f766e 100%); color: white; padding: 34px 42px 28px; border-bottom: 5px solid #0f766e; }
+    header .kicker { text-transform: uppercase; letter-spacing: .08em; font-size: 12px; opacity: .82; font-weight: 700; }
+    h1 { margin: 8px 0 8px; font-size: 34px; line-height: 1.1; letter-spacing: 0; }
+    h2 { margin: 0 0 14px; font-size: 20px; letter-spacing: 0; }
+    h3 { margin: 16px 0 8px; font-size: 15px; letter-spacing: 0; }
+    p { line-height: 1.55; }
+    main { max-width: 1220px; margin: 0 auto; padding: 26px; }
+    section { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 22px; margin-bottom: 18px; box-shadow: 0 1px 2px rgba(16, 24, 40, .04); }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { border-bottom: 1px solid #e6ebf2; padding: 9px 8px; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+    th { background: #f3f6fa; color: #334155; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; }
+    code { background: #eef3f8; color: #0f172a; padding: 2px 5px; border-radius: 4px; }
+    pre { white-space: pre-wrap; background: #101828; color: #e5edf7; padding: 14px; border-radius: 6px; max-height: 360px; overflow: auto; }
+    .subhead { color: rgba(255,255,255,.84); max-width: 900px; margin: 0; }
+    .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
+    .card { background: white; border: 1px solid var(--line); border-radius: 8px; padding: 16px; }
+    .card .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; font-weight: 700; }
+    .card .value { font-size: 28px; font-weight: 800; margin-top: 6px; color: var(--brand); }
+    .badge { display: inline-block; padding: 5px 9px; border-radius: 999px; font-size: 12px; font-weight: 800; border: 1px solid transparent; }
+    .badge-high { background: #fee4e2; color: var(--danger); border-color: #fecdca; }
+    .badge-medium { background: #fef0c7; color: var(--warn); border-color: #fedf89; }
+    .badge-low { background: #dcfae6; color: var(--ok); border-color: #abefc6; }
+    .note { color: var(--muted); margin: 0 0 12px; }
+    .callout { border-left: 4px solid var(--brand-2); background: #f0fdfa; padding: 12px 14px; border-radius: 6px; color: #134e4a; }
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    footer { color: var(--muted); font-size: 12px; text-align: center; padding: 20px 0 34px; }
+    @media (max-width: 900px) { .grid, .two { grid-template-columns: 1fr; } header { padding: 28px 22px; } main { padding: 18px; } }
+  </style>
+</head>
+<body>
+<header>
+  <div class="kicker">Authorized Android Logical Forensic Triage</div>
+  <h1>DroidForensicX Report</h1>
+  <p class="subhead">Case <strong>{{ case_id }}</strong> | Generated with DroidForensicX {{ tool_version }} | Secrets redacted by default</p>
+</header>
+<main>
+  <section>
+    <h2>Executive Summary</h2>
+    <p class="callout">DroidForensicX does not extract, decrypt, dump, or bypass passwords. It only imports lawfully provided credential exports and redacts secrets by default.</p>
+    <div class="grid">
+      <div class="card"><div class="label">Risk Level</div><div class="value"><span class="badge {% if risk_summary.risk_level == 'HIGH' %}badge-high{% elif risk_summary.risk_level == 'MEDIUM' %}badge-medium{% else %}badge-low{% endif %}">{{ risk_summary.risk_level | default("Not calculated") }}</span></div></div>
+      <div class="card"><div class="label">Apps Parsed</div><div class="value">{{ metrics.apps }}</div></div>
+      <div class="card"><div class="label">Uninstalled Leads</div><div class="value">{{ metrics.uninstalled }}</div></div>
+      <div class="card"><div class="label">Indicators</div><div class="value">{{ metrics.indicators }}</div></div>
+      <div class="card"><div class="label">Risky Permissions</div><div class="value">{{ metrics.dangerous_permissions }}</div></div>
+      <div class="card"><div class="label">Credential Rows</div><div class="value">{{ metrics.credentials }}</div></div>
+      <div class="card"><div class="label">Timeline Events</div><div class="value">{{ metrics.timeline }}</div></div>
+      <div class="card"><div class="label">Hashed Files</div><div class="value">{{ metrics.hashed_files }}</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Authorization and Scope</h2>
+    <p>This report is intended for authorized DFIR, SOC, incident response, and defence investigation use only. The acquisition method is logical and non-destructive. The report should be interpreted with the stated limitations and chain-of-custody records.</p>
+  </section>
+
+  <div class="two">
+    <section>
+      <h2>Device Identity</h2>
+      <table>{% for key, value in device_props.items() %}<tr><th>{{ key }}</th><td>{{ value }}</td></tr>{% else %}<tr><td>No device identity collected.</td></tr>{% endfor %}</table>
+    </section>
+    <section>
+      <h2>Tool Availability</h2>
+      <table><tr><th>Tool</th><th>Status</th><th>Path</th></tr>{% for name, info in tools.items() %}<tr><td>{{ name }}</td><td>{{ "available" if info.available else "missing" }}</td><td>{{ info.path }}</td></tr>{% endfor %}</table>
+    </section>
+  </div>
+
+  <section>
+    <h2>Suspicious Indicators</h2>
+    <p class="note">Indicators are triage leads. Validate each finding against raw evidence before drawing conclusions.</p>
+    <table><tr><th>Severity</th><th>Indicator</th><th>Evidence</th><th>Score</th></tr>{% for row in indicators %}<tr><td><span class="badge {% if row.severity == 'HIGH' %}badge-high{% elif row.severity == 'MEDIUM' %}badge-medium{% else %}badge-low{% endif %}">{{ row.severity }}</span></td><td>{{ row.indicator }}</td><td>{{ row.evidence }}</td><td>{{ row.score }}</td></tr>{% else %}<tr><td colspan="4">No suspicious indicators were generated.</td></tr>{% endfor %}</table>
+  </section>
+
+  <section>
+    <h2>Installed Apps</h2>
+    <table><tr><th>Package</th><th>Installer</th><th>Version</th><th>First Install</th><th>Last Update</th></tr>{% for app in apps[:100] %}<tr><td><code>{{ app.package }}</code></td><td>{{ app.installer }}</td><td>{{ app.version_name }}</td><td>{{ app.first_install_time }}</td><td>{{ app.last_update_time }}</td></tr>{% else %}<tr><td colspan="5">No app inventory generated.</td></tr>{% endfor %}</table>
+  </section>
+
+  <section>
+    <h2>Uninstalled App Traces</h2>
+    <p class="note">Android does not guarantee permanent uninstall history. Confidence levels reflect available trace strength.</p>
+    <table><tr><th>Package</th><th>Confidence</th><th>Evidence</th></tr>{% for row in uninstalled[:100] %}<tr><td><code>{{ row.package }}</code></td><td>{{ row.confidence }}</td><td>{{ row.evidence }}</td></tr>{% else %}<tr><td colspan="3">No uninstalled app candidates were generated.</td></tr>{% endfor %}</table>
+  </section>
+
+  <section>
+    <h2>Risky Permissions</h2>
+    <table><tr><th>Package</th><th>Permission</th></tr>{% for row in dangerous[:150] %}<tr><td><code>{{ row.package }}</code></td><td>{{ row.permission }}</td></tr>{% else %}<tr><td colspan="2">No dangerous permission output was generated.</td></tr>{% endfor %}</table>
+  </section>
+
+  <section>
+    <h2>Credential Evidence, Redacted</h2>
+    <p class="note">Imported records: {{ credential_summary.records | default(0) }}. Raw password values are not shown in this report.</p>
+    <table><tr><th>Domain</th><th>Username</th><th>Password</th></tr>{% for row in credentials[:80] %}<tr><td>{{ row.domain }}</td><td>{{ row.username }}</td><td><code>{{ row.password }}</code></td></tr>{% else %}<tr><td colspan="3">No credential import output was generated.</td></tr>{% endfor %}</table>
+  </section>
+
+  <div class="two">
+    <section><h2>Social Media Imported Artifacts</h2><p>Files imported: {{ social_summary.files_imported | default(0) }}</p><p class="note">Only lawful exports are imported. Private app database bypass is not performed.</p></section>
+    <section><h2>Media Findings</h2><p>Media files indexed: {{ media_summary.media_files | default(0) }}</p><p class="note">Shared-storage indexing depends on lawful access and Android storage restrictions.</p></section>
+  </div>
+
+  <section>
+    <h2>Unified Timeline</h2>
+    <table><tr><th>Timestamp</th><th>Source</th><th>Event</th><th>Artifact</th></tr>{% for row in timeline[:250] %}<tr><td>{{ row.timestamp }}</td><td>{{ row.source }}</td><td>{{ row.event_type }}</td><td>{{ row.artifact }}</td></tr>{% else %}<tr><td colspan="4">No unified timeline events were generated.</td></tr>{% endfor %}</table>
+  </section>
+
+  <section>
+    <h2>Limitations</h2>
+    <ul>{% for item in limitations %}<li>{{ item }}</li>{% endfor %}</ul>
+  </section>
+
+  <section>
+    <h2>Hash Appendix</h2>
+    <pre>{{ hashes_text }}</pre>
+  </section>
+</main>
+<footer>DroidForensicX | Authorized logical triage | MIT License</footer>
+</body>
+</html>
