@@ -86,10 +86,12 @@ droidforensicx --help
 Install from Git:
 
 ```bash
-git clone https://github.com/your-org/DroidForensicX.git
+git clone https://github.com/faysalferdous/DroidForensicX.git
 cd DroidForensicX
-./install.sh
-. .venv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -U pip wheel
+pip install -e .
 droidforensicx --help
 ```
 
