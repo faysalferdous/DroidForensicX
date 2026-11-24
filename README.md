@@ -14,6 +14,12 @@ DroidForensicX is an open-source Android logical forensic triage framework for a
 
 It is built for the first hours of an Android investigation: establish device context, preserve logical evidence, identify risky app behavior, surface uninstalled-app traces, protect sensitive values, and produce a report that an analyst can hand to a reviewer.
 
+[View the synthetic case report](examples/demo_case_synthetic/report.md)
+
+| Time (UTC) | App | Recorded event |
+| --- | --- | --- |
+| 2026-07-12 10:20 | `com.shortlived.proxy` | The app lifecycle timeline records `lastTimeUsed`. |
+
 ## Core Positioning
 
 DroidForensicX is not a password dumper and not a bypass tool. It is an authorized Android logical forensic triage, app lifecycle, evidence hashing, timeline, risk scoring, and reporting framework.
