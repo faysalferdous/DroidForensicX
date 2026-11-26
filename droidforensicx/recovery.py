@@ -14,6 +14,8 @@ import stat
 import subprocess
 import uuid
 import zipfile
+import struct
+import zlib
 from pathlib import Path
 from typing import Any
 
@@ -58,6 +60,55 @@ def files_under(root: Path):
                 yield path
 
 
+def validate_png(path: Path) -> str:
+    """Stream chunk CRCs without decoding untrusted compressed image data."""
+    size = path.stat().st_size
+    with path.open("rb") as handle:
+        if handle.read(8) != b"\x89PNG\r\n\x1a\n":
+            return "suspect"
+        first, image_data = True, False
+        while handle.tell() < size:
+            header = handle.read(8)
+            if len(header) != 8:
+                return "suspect"
+            length, kind = struct.unpack(">I4s", header)
+            if length > size - handle.tell() - 4:
+                return "suspect"
+            if first and (kind != b"IHDR" or length != 13):
+                return "suspect"
+            first = False
+            crc = zlib.crc32(kind)
+            remaining = length
+            while remaining:
+                data = handle.read(min(remaining, 1024 * 1024))
+                if not data:
+                    return "suspect"
+                crc = zlib.crc32(data, crc)
+                remaining -= len(data)
+            trailer = handle.read(4)
+            if len(trailer) != 4 or struct.unpack(">I", trailer)[0] != crc:
+                return "suspect"
+            if kind == b"IDAT":
+                image_data = True
+            if kind == b"IEND":
+                return "structural_pass" if length == 0 and image_data and handle.tell() == size else "suspect"
+    return "suspect"
+
+
+def validate_zip(path: Path) -> str:
+    """Validate bounded ZIP contents without extracting files."""
+    try:
+        with zipfile.ZipFile(path) as archive:
+            entries = archive.infolist()
+            if len(entries) > 10000 or sum(e.file_size for e in entries) > 64 * 1024 * 1024:
+                return "basic_pass"
+            if any(e.flag_bits & 1 for e in entries):
+                return "basic_pass"
+            return "structural_pass" if archive.testzip() is None else "suspect"
+    except (OSError, ValueError, RuntimeError, NotImplementedError, zipfile.BadZipFile, zlib.error):
+        return "suspect"
+
+
 def validation(path: Path) -> str:
     """Lightweight structural checks, not proof of complete recovery."""
     if path.stat().st_size == 0:
@@ -70,7 +121,7 @@ def validation(path: Path) -> str:
     if ext in {".jpg", ".jpeg"}:
         return "basic_pass" if head.startswith(b"\xff\xd8") and tail.endswith(b"\xff\xd9") else "suspect"
     if ext == ".png":
-        return "basic_pass" if head.startswith(b"\x89PNG\r\n\x1a\n") and b"IEND" in tail else "suspect"
+        return validate_png(path)
     if ext == ".pdf":
         return "basic_pass" if head.startswith(b"%PDF-") and b"%%EOF" in tail else "suspect"
     if ext in {".mp4", ".mov", ".m4a", ".m4v", ".3gp"}:
@@ -78,7 +129,7 @@ def validation(path: Path) -> str:
     if ext in {".sqlite", ".sqlite3", ".db"}:
         return "basic_pass" if head == b"SQLite format 3\x00" else "not_validated"
     if ext in {".zip", ".docx", ".xlsx", ".pptx", ".apk", ".odt"}:
-        return "basic_pass" if zipfile.is_zipfile(path) else "suspect"
+        return validate_zip(path)
     return "not_validated"
 
 

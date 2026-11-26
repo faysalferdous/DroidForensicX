@@ -35,7 +35,8 @@ def collect_basic(out_dir: Path, timeout: int = 90) -> dict[str, object]:
     summary: dict[str, object] = {"adb_available": bool(tool_path("adb")), "commands": []}
     if not tool_path("adb"):
         summary["warning"] = "adb not found in PATH"
-        write_json(out_dir / "acquire_basic_summary.json", summary)
+        summary["status"] = "partial_or_failed"
+        write_json(out_dir / "acquire_basic_summary.json", summary
         return summary
     commands: list[dict[str, str | int]] = []
     for filename, args in ADB_COLLECTIONS.items():

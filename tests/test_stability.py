@@ -117,3 +117,34 @@ def test_single_file_media(tmp_path):
     source = tmp_path / "sample.txt"
     source.write_text("synthetic")
     assert scan_media(ctx, source)["media_files"] == 1
+
+
+def test_png_structural_validation(tmp_path):
+    import struct
+    import zlib
+    from droidforensicx.recovery import validation
+
+    def chunk(kind, data):
+        return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data))
+
+    png = tmp_path / "sample.png"
+    signature = b"\x89PNG\r\n\x1a\n"
+    content = signature + chunk(b"IHDR", struct.pack(">IIBBBBB", 1, 1, 8, 2, 0, 0, 0))
+    content += chunk(b"IDAT", zlib.compress(b"\x00\xff\x00\x00")) + chunk(b"IEND", b"")
+    png.write_bytes(content)
+    assert validation(png) == "structural_pass"
+    broken = bytearray(content)
+    broken[-1] ^= 1
+    png.write_bytes(broken)
+    assert validation(png) == "suspect"
+
+
+def test_zip_structural_validation(tmp_path):
+    import zipfile
+    from droidforensicx.recovery import validation
+    archive = tmp_path / "sample.zip"
+    with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_STORED) as handle:
+        handle.writestr("sample.txt", "synthetic contents")
+    assert validation(archive) == "structural_pass"
+    archive.write_bytes(archive.read_bytes().replace(b"synthetic contents", b"corrupted contents"))
+    assert validation(archive) == "suspect"

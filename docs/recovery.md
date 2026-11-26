@@ -112,3 +112,5 @@ New runs check free space before copying an image, with a minimum 16 MiB reserve
 This is not a guarantee of capacity for all recovered output. New cases use restricted
 permissions on POSIX and refuse reuse of an existing case ID. Use separate cases for demos.
 Unknown-timezone timeline entries retain their raw timestamp and are grouped after known UTC entries.
+
+PNG chunk CRC and bounded ZIP entry CRC checks provide structural validation without extracting archives. Large or encrypted ZIP archives receive only a basic container check. Full decoding and all formats are not guaranteed. The real-engine CI includes a synthetic FFmpeg remux and ffprobe check; PhotoRec and owned-device testing remain separate.
