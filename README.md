@@ -159,6 +159,8 @@ open cases/DEMO-ANDROID-FORENSIC/14_reports/report.html
 | `hash` | Hash evidence and generated outputs |
 | `report` | Generate professional reports |
 | `defence-full` | Run the main workflow end to end |
+| `recover-all` | Run all applicable methods across explicitly selected images and exports |
+| `recover-verify` | Verify recovered file hashes against a run manifest |
 | `recover-image` | Recover candidates from an authorized offline image |
 | `recover-import` | Import an authorized local backup or media export |
 | `demo` | Build a complete synthetic demo case |

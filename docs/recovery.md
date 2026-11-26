@@ -19,7 +19,7 @@ data unrecoverable.
     droidforensicx recover-import --case RECOVERY-001 --input /path/to/export --authorized
 
 The image command runs TSK unallocated-file extraction and PhotoRec
-whole-image carving with its default enabled formats. Use a raw partition image
+whole-image carving with all PhotoRec-supported file families enabled. Use a raw partition image
 for best carving results. Use --filesystem ext for ext filesystems, --offset
 for a TSK partition offset in sectors, and --no-carve for TSK only. For a full
 partitioned disk, inspect its layout with mmls and obtain a suitable partition
@@ -30,6 +30,16 @@ Logical import accepts files or folders exported via the phone's built-in
 Trash, backup, USB file transfer or an explicitly authorized ADB media export.
 These are existing files, not proof of deletion. It does not automatically
 access app-private trash or cloud accounts.
+
+## Batch recovery and verification
+
+    droidforensicx recover-all --case RECOVERY-001 --image card.img --input exported-files --authorized
+    droidforensicx recover-verify --case RECOVERY-001 --run RUN_ID
+
+Repeat --image and --input for multiple explicit sources. The batch summary
+counts unique SHA-256 hashes across child runs. A failed source does not stop
+other sources. Verification checks a child run's files.csv and detects changed
+or missing files; it is not a signed manifest and cannot detect all tampering.
 
 ## SD card and TestDisk
 
@@ -49,7 +59,7 @@ enough disk space for the copy plus recovered files. The original image should
 also be stored read-only. Logs, files.csv and recovery_report.json record
 engine status, provenance, SHA-256, duplicate relationships and basic file
 validation. Duplicate files are preserved, not removed. Whole-image carved
-files may include existing files. Basic JPEG, PNG, PDF and ZIP container checks
+files may include existing files. Basic JPEG, PNG, PDF, ISO media, SQLite and ZIP container checks
 are not full decoding, and other types are marked not validated. No repair or
 recovery percentage is promised. Never upload case output to GitHub.
 
@@ -71,3 +81,10 @@ test is still required. No real personal data belongs in test fixtures.
 References:
 - https://www.cgsecurity.org/testdisk_doc/scripted_run.html
 - https://wiki.sleuthkit.org/tsk_recover/
+
+## Release gate
+
+Recovery CI runs the unit suite and an opt-in real Sleuth Kit FAT image test.
+Check CI results and complete a separate real PhotoRec and owned-device export
+smoke test before tagging a stable release. No automatic physical acquisition,
+private app access, or media repair is provided by this update.

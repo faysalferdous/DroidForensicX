@@ -19,7 +19,7 @@ from .external import detect_tools, run_androidqf, run_mvt
 from .media import scan_media
 from .parsers import parse_adb_devices, parse_getprop
 from .reporting import generate_report
-from .recovery import import_export, recover_image
+from .recovery import import_export, recover_all, recover_image, verify_run
 from .social import import_social
 from .utils import read_text, run_command, tool_path, write_json
 
@@ -233,6 +233,45 @@ def recovery_import_cmd(
         raise typer.BadParameter(str(error)) from error
     console.print("Import status:", result["status"], "Files:", result["files"], "Run:", result["run"], markup=False)
     if result["status"] != "complete":
+        raise typer.Exit(1)
+
+
+@app.command("recover-all")
+def recovery_all_cmd(
+    case: str = typer.Option(..., "--case"),
+    images: list[Path] = typer.Option(None, "--image"),
+    exports: list[Path] = typer.Option(None, "--input"),
+    authorized: bool = typer.Option(False, "--authorized"),
+    filesystem: str = typer.Option("other", "--filesystem"),
+    timeout: int = typer.Option(3600, "--timeout", min=1),
+    no_carve: bool = typer.Option(False, "--no-carve"),
+) -> None:
+    """Run applicable recovery methods against selected images and exports."""
+    if not authorized:
+        raise typer.BadParameter("Confirm authorization with --authorized")
+    try:
+        result = recover_all(ctx(case), images or [], exports or [], timeout=timeout,
+                             filesystem=filesystem, carve=not no_carve)
+    except (OSError, ValueError) as error:
+        raise typer.BadParameter(str(error)) from error
+    console.print("Recovery status:", result["status"], "Files:", result["files"],
+                  "Unique:", result["unique_files"], "Run:", result["run"], markup=False)
+    if result["status"] != "complete":
+        raise typer.Exit(1)
+
+
+@app.command("recover-verify")
+def recovery_verify_cmd(
+    case: str = typer.Option(..., "--case"),
+    run_id: str = typer.Option(..., "--run"),
+) -> None:
+    """Verify recovered files against a saved run manifest."""
+    try:
+        result = verify_run(ctx(case), run_id)
+    except (OSError, ValueError) as error:
+        raise typer.BadParameter(str(error)) from error
+    console.print(result, markup=False)
+    if result["status"] != "verified":
         raise typer.Exit(1)
 
 
