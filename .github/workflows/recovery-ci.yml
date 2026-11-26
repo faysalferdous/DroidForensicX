@@ -18,6 +18,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - run: python -m pip install -e '.[dev]'
+      - run: python -m compileall -q droidforensicx tests
       - run: python -m pytest -q
       - run: droidforensicx recover-all --help
   offline-engine:

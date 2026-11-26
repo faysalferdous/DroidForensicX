@@ -148,3 +148,10 @@ def test_zip_structural_validation(tmp_path):
     assert validation(archive) == "structural_pass"
     archive.write_bytes(archive.read_bytes().replace(b"synthetic contents", b"corrupted contents"))
     assert validation(archive) == "suspect"
+
+
+def test_cli_import_and_help():
+    from typer.testing import CliRunner
+    from droidforensicx.cli import app
+    result = CliRunner().invoke(app, ["recover-all", "--help"])
+    assert result.exit_code == 0, result.output
