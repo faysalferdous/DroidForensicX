@@ -52,6 +52,7 @@ It does not root devices, bypass lockscreens, exploit Android, defeat the app sa
 | Social imports | lawful export index, chat timeline, contact mentions |
 | Timeline | `timeline.csv`, `timeline.md`, `timeline.html` |
 | Integrity | `SHA256SUMS.txt`, `evidence_manifest.json`, `hash_verify.txt` |
+| Offline file recovery | PhotoRec carving, TSK undelete candidates, authorized export import, SHA-256 manifests |
 | Reporting | `report.html`, `report.md`, `executive_summary.md` |
 
 ## Architecture
@@ -158,6 +159,12 @@ open cases/DEMO-ANDROID-FORENSIC/14_reports/report.html
 | `hash` | Hash evidence and generated outputs |
 | `report` | Generate professional reports |
 | `defence-full` | Run the main workflow end to end |
+| `recover-device` | Collect selected existing shared media from an authorized ADB device |
+| `recover-remux` | Attempt lossless video container salvage on a working copy |
+| `recover-all` | Run all applicable methods across explicitly selected images and exports |
+| `recover-verify` | Verify recovered file hashes against a run manifest |
+| `recover-image` | Recover candidates from an authorized offline image |
+| `recover-import` | Import an authorized local backup or media export |
 | `demo` | Build a complete synthetic demo case |
 
 ## Case Folder Layout
@@ -178,8 +185,13 @@ cases/<CASE_ID>/
 ├── 11_indicators/
 ├── 12_timeline/
 ├── 13_hashes/
-└── 14_reports/
+├── 14_reports/
+└── 15_recovery/
 ```
+
+## Universal File Recovery
+
+See [the recovery guide](docs/recovery.md) for installation, image recovery, export import and synthetic tests. Recovery is limited to readable offline images and accessible exports; permanent Android internal-storage recovery is not guaranteed.
 
 ## Credential Evidence Handling
 
