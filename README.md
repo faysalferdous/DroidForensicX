@@ -8,7 +8,7 @@
 ![Reports](https://img.shields.io/badge/reports-HTML%20%7C%20Markdown-0f766e)
 ![Safety](https://img.shields.io/badge/default-secrets%20redacted-b91c1c)
 
-Created by **Faysal Ferdous**.
+Created by **Faysal Ferdous**, project founder and maintainer. He retains copyright in his original work and any contributions validly assigned to him. Other copyright holders retain their rights unless separately transferred.
 
 DroidForensicX is an open-source Android logical forensic triage framework for authorized DFIR, SOC, incident response, and defence investigation work. It turns safe ADB collection, lawful external exports, app lifecycle traces, suspicious indicators, timelines, hashes, and professional reports into one repeatable case workflow.
 
@@ -298,7 +298,9 @@ cases/DEMO-ANDROID-FORENSIC/14_reports/report.html
 
 ## Contributing
 
-Pull requests are welcome. Contributions must preserve:
+Pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the contribution and copyright policy, including the proposed copyright assignment process.
+
+Contributions must preserve:
 
 - authorized-use boundaries
 - default secret redaction
@@ -309,7 +311,7 @@ Pull requests are welcome. Contributions must preserve:
 
 ## License
 
-MIT License. See [LICENSE](LICENSE).
+MIT License. See [LICENSE](LICENSE). Existing third-party and contributor copyright notices are preserved; this notice does not transfer ownership or revoke previously granted MIT permissions.
 
 ## Stability and release checks
 
