@@ -41,6 +41,24 @@ counts unique SHA-256 hashes across child runs. A failed source does not stop
 other sources. Verification checks a child run's files.csv and detects changed
 or missing files; it is not a signed manifest and cannot detect all tampering.
 
+## Authorized device collection and video salvage
+
+    adb devices -l
+    droidforensicx recover-device --case RECOVERY-001 --serial SERIAL --folder DCIM --folder Movies --authorized
+    droidforensicx recover-remux --case RECOVERY-001 --input damaged.mp4 --authorized
+
+The device command requires the owner to enable and approve USB debugging and
+an explicit serial and standard shared folder. Supported folders are DCIM,
+Pictures, Movies, Music, Download, Documents, Recordings, Podcasts and Audiobooks.
+It copies existing accessible files, not permanently deleted data. No root or
+private app folder access. Do not enable debugging on evidence without assessing
+the changes that introduces. Live source hashes are not independently verified.
+
+The remux command needs FFmpeg and attempts to salvage readable audio/video
+streams into a new MKV on a working copy. It cannot recreate missing streams,
+repair every damaged container, or certify playback. Review partial results
+and retain the original evidence.
+
 ## SD card and TestDisk
 
 Use a write blocker where available; unmount the card and use a trusted imaging
@@ -86,5 +104,5 @@ References:
 
 Recovery CI runs the unit suite and an opt-in real Sleuth Kit FAT image test.
 Check CI results and complete a separate real PhotoRec and owned-device export
-smoke test before tagging a stable release. No automatic physical acquisition,
-private app access, or media repair is provided by this update.
+smoke test before tagging a stable release. No automatic physical acquisition or private app access is provided. Validate
+ADB collection and FFmpeg remux separately with owned devices and synthetic media.

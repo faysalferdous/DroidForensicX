@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import os
 import csv
+from collections import Counter
 import re
 import shutil
 import stat
@@ -98,8 +99,7 @@ def finish(run: Path, report: dict[str, Any], roots: list[tuple[str, Path, str]]
     rows = inventory(run, roots)
     report.update({
         "bytes": sum(r["size"] for r in rows),
-        "extensions": {ext: sum(Path(r["path"]).suffix.lower() == ext for r in rows)
-                       for ext in sorted({Path(r["path"]).suffix.lower() for r in rows})},
+        "extensions": dict(Counter(Path(r["path"]).suffix.lower() for r in rows)),
         "finished_utc": utc_now_iso(), "run": str(run),
         "files": len(rows), "unique_files": sum(not r["duplicate_of"] for r in rows),
         "suspect_or_empty": sum(r["validation"] in {"suspect", "empty"} for r in rows),
@@ -266,3 +266,93 @@ def verify_run(ctx: CaseContext, run_id: str) -> dict[str, Any]:
             elif sha256_file(path) != row["sha256"]:
                 failures.append({"path": row["path"], "reason": "hash mismatch"})
     return {"status": "failed" if failures else "verified", "checked": count, "failures": failures}
+
+
+SHARED_MEDIA_DIRS = frozenset({"DCIM", "Pictures", "Movies", "Music", "Download",
+                               "Documents", "Recordings", "Podcasts", "Audiobooks"})
+
+
+def collect_media(ctx: CaseContext, serial: str, directories: list[str],
+                  *, timeout: int = 3600) -> dict[str, Any]:
+    """Collect only user-selected standard shared folders via authorized ADB."""
+    if not re.fullmatch(r"[A-Za-z0-9._:-]{1,128}", serial) or serial.startswith("-"):
+        raise ValueError("Specify an exact ADB device serial")
+    if not directories or any(d not in SHARED_MEDIA_DIRS for d in directories):
+        raise ValueError("Select standard shared media folders, not private or arbitrary paths")
+    if timeout <= 0:
+        raise ValueError("Timeout must be positive")
+    run = new_run(ctx)
+    logs = run / "logs"
+    logs.mkdir()
+    out = run / "shared"
+    out.mkdir()
+    adb = tool_path("adb")
+    results = []
+    if not adb:
+        return finish(run, {"mode": "adb_shared", "status": "partial_or_failed",
+                            "engines": [{"engine": "adb", "status": "missing"}]}, [])
+    try:
+        state = subprocess.run([adb, "-s", serial, "get-state"], capture_output=True,
+                               text=True, timeout=30, check=False)
+        if state.returncode != 0 or state.stdout.strip() != "device":
+            raise ValueError("Selected device is unavailable or not authorized")
+    except (OSError, ValueError, subprocess.TimeoutExpired) as error:
+        return finish(run, {"mode": "adb_shared", "status": "partial_or_failed",
+                            "error": str(error)}, [])
+    roots = []
+    for directory in dict.fromkeys(directories):
+        dest = out / directory
+        dest.mkdir()
+        with (logs / (directory + ".log")).open("wb") as log:
+            try:
+                result = subprocess.run([adb, "-s", serial, "pull", "-a",
+                                         "/sdcard/" + directory + "/.", str(dest)],
+                                        stdout=log, stderr=subprocess.STDOUT,
+                                        timeout=timeout, check=False)
+                status = "completed" if result.returncode == 0 else "failed"
+            except subprocess.TimeoutExpired:
+                status = "timeout"
+            except OSError:
+                status = "failed"
+        results.append({"folder": directory, "status": status})
+        roots.append(("adb", dest, "existing_shared_file"))
+    return finish(run, {"mode": "adb_shared", "serial": serial,
+                        "engines": results, "status": "complete" if all(
+                            r["status"] == "completed" for r in results) else "partial_or_failed",
+                        "source_note": "Live logical collection; source hashes not verified on device."}, roots)
+
+
+REMUX_FORMATS = {".mp4": "mov", ".mov": "mov", ".m4v": "mov",
+                 ".mkv": "matroska", ".avi": "avi", ".webm": "matroska"}
+
+
+def salvage_media(ctx: CaseContext, source: Path, *, timeout: int = 300) -> dict[str, Any]:
+    """Try lossless remux into a new MKV container; never overwrite evidence."""
+    source = regular_source(source)
+    fmt = REMUX_FORMATS.get(source.suffix.lower())
+    if not fmt or timeout <= 0:
+        raise ValueError("Select a supported local video file and positive timeout")
+    run = new_run(ctx)
+    logs = run / "logs"
+    logs.mkdir()
+    out = run / "salvage"
+    out.mkdir()
+    before = sha256_file(source)
+    working = run / ("source" + source.suffix.lower())
+    shutil.copyfile(source, working)
+    working.chmod(0o400)
+    if sha256_file(working) != before:
+        return finish(run, {"mode": "media_salvage", "status": "partial_or_failed",
+                            "error": "Working copy hash mismatch"}, [])
+    destination = out / "salvaged.mkv"
+    result = execute("ffmpeg", ["-nostdin", "-n", "-v", "error", "-protocol_whitelist", "file,pipe",
+                                "-f", fmt, "-i", str(working), "-map", "0:v?", "-map", "0:a?",
+                                "-c", "copy", "-f", "matroska", str(destination)], logs, timeout)
+    unchanged = sha256_file(source) == before and sha256_file(working) == before
+    complete = (result["status"] == "completed" and destination.is_file()
+                and destination.stat().st_size > 0 and unchanged)
+    return finish(run, {"mode": "media_salvage", "source": str(source),
+                        "source_sha256_before": before, "source_unchanged": unchanged,
+                        "engines": [result], "status": "complete" if complete else "partial_or_failed",
+                        "note": "Remux is a derivative, not proof of repair or complete decoding."},
+                  [("ffmpeg", out, "derived_media_remux")])

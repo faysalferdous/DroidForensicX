@@ -105,3 +105,46 @@ def test_photorec_excludes_engine_report(tmp_path, monkeypatch):
 
     monkeypatch.setattr(recovery, "execute", fake)
     assert recovery.recover_image(ctx, source)["files"] == 1
+
+
+def test_shared_media_requires_selected_folder(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+
+    ctx = create_case("TEST", "Examiner", tmp_path / "cases")
+    monkeypatch.setattr(recovery, "tool_path", lambda name: "/fake/adb")
+
+    def fake(args, **kwargs):
+        assert args[1:3] == ["-s", "TEST123"]
+        if args[3] == "get-state":
+            return SimpleNamespace(returncode=0, stdout="device\n")
+        assert args[3:6] == ["pull", "-a", "/sdcard/DCIM/."]
+        (Path(args[-1]) / "sample.jpg").write_bytes(b"\xff\xd8fake\xff\xd9")
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(recovery.subprocess, "run", fake)
+    report = recovery.collect_media(ctx, "TEST123", ["DCIM"])
+    assert report["status"] == "complete"
+    assert report["files"] == 1
+    assert "existing_shared_file" in (Path(report["run"]) / "files.csv").read_text()
+    with pytest.raises(ValueError):
+        recovery.collect_media(ctx, "TEST123", ["../data"])
+
+
+def test_media_remux_keeps_original(tmp_path, monkeypatch):
+    ctx = create_case("TEST", "Examiner", tmp_path / "cases")
+    source = tmp_path / "sample.mp4"
+    source.write_bytes(b"synthetic")
+    before = sha256_file(source)
+
+    def fake(name, args, logs, timeout, interactive=False):
+        assert name == "ffmpeg"
+        assert "-n" in args
+        assert Path(args[args.index("-i") + 1]) != source
+        Path(args[-1]).write_bytes(b"derived")
+        return {"engine": name, "status": "completed"}
+
+    monkeypatch.setattr(recovery, "execute", fake)
+    report = recovery.salvage_media(ctx, source)
+    assert report["status"] == "complete"
+    assert sha256_file(source) == before
+    assert "derived_media_remux" in (Path(report["run"]) / "files.csv").read_text()

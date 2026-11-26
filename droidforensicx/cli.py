@@ -19,7 +19,7 @@ from .external import detect_tools, run_androidqf, run_mvt
 from .media import scan_media
 from .parsers import parse_adb_devices, parse_getprop
 from .reporting import generate_report
-from .recovery import import_export, recover_all, recover_image, verify_run
+from .recovery import collect_media, import_export, recover_all, recover_image, salvage_media, verify_run
 from .social import import_social
 from .utils import read_text, run_command, tool_path, write_json
 
@@ -272,6 +272,46 @@ def recovery_verify_cmd(
         raise typer.BadParameter(str(error)) from error
     console.print(result, markup=False)
     if result["status"] != "verified":
+        raise typer.Exit(1)
+
+
+@app.command("recover-device")
+def recovery_device_cmd(
+    case: str = typer.Option(..., "--case"),
+    serial: str = typer.Option(..., "--serial"),
+    folders: list[str] = typer.Option(..., "--folder"),
+    authorized: bool = typer.Option(False, "--authorized"),
+    timeout: int = typer.Option(3600, "--timeout", min=1),
+) -> None:
+    """Collect selected existing shared media folders from an authorized device."""
+    if not authorized:
+        raise typer.BadParameter("Confirm authorization with --authorized")
+    try:
+        result = collect_media(ctx(case), serial, folders, timeout=timeout)
+    except (OSError, ValueError) as error:
+        raise typer.BadParameter(str(error)) from error
+    console.print("Collection status:", result["status"], "Files:", result["files"],
+                  "Run:", result["run"], markup=False)
+    if result["status"] != "complete":
+        raise typer.Exit(1)
+
+
+@app.command("recover-remux")
+def recovery_remux_cmd(
+    case: str = typer.Option(..., "--case"),
+    source: Path = typer.Option(..., "--input"),
+    authorized: bool = typer.Option(False, "--authorized"),
+    timeout: int = typer.Option(300, "--timeout", min=1),
+) -> None:
+    """Attempt a non-destructive video container remux on a working copy."""
+    if not authorized:
+        raise typer.BadParameter("Confirm authorization with --authorized")
+    try:
+        result = salvage_media(ctx(case), source, timeout=timeout)
+    except (OSError, ValueError) as error:
+        raise typer.BadParameter(str(error)) from error
+    console.print("Remux status:", result["status"], "Run:", result["run"], markup=False)
+    if result["status"] != "complete":
         raise typer.Exit(1)
 
 
