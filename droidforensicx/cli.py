@@ -50,13 +50,19 @@ def banner() -> None:
 
 
 def ctx(case: str):
-    return get_case(case)
+    try:
+        return get_case(case)
+    except (ValueError, OSError) as error:
+        raise typer.BadParameter(str(error)) from error
 
 
 @app.command()
 def init(case: str = typer.Option(..., "--case"), examiner: str = typer.Option(..., "--examiner")) -> None:
     banner()
-    case_ctx = create_case(case, examiner)
+    try:
+        case_ctx = create_case(case, examiner)
+    except (OSError, ValueError) as error:
+        raise typer.BadParameter(str(error)) from error
     console.print(f"[green]+[/green] Case created: {case_ctx.root}")
 
 
@@ -187,7 +193,10 @@ def defence_full(case: str = typer.Option(..., "--case"), examiner: str = typer.
 @app.command()
 def demo(case: str = typer.Option("DEMO-ANDROID-FORENSIC", "--case")) -> None:
     banner()
-    reports = create_demo(case)
+    try:
+        reports = create_demo(case)
+    except (OSError, ValueError) as error:
+        raise typer.BadParameter(str(error)) from error
     case_ctx = ctx(case)
     risk = case_ctx.file("11_indicators", "risk_summary.json")
     console.print(f"[green]+[/green] Case: {case}")

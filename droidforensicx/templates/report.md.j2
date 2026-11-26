@@ -100,6 +100,12 @@ Media files indexed: {{ media_summary.media_files | default(0) }}
 
 No-root logical triage cannot guarantee recovery of deleted internal Android files. External SD or shared storage recovery requires lawful access and separate specialist workflow.
 
+Recovery run counts (candidates, not confirmed deleted files):
+
+{% for run in recovery_runs %}- {{ run.id }}: {{ run.mode }} / {{ run.status }} / {{ run.files }} files
+{% else %}No recovery runs recorded.
+{% endfor %}
+
 ## 17. Timeline
 
 {% for row in timeline[:120] %}- `{{ row.timestamp }}` **{{ row.source }}** {{ row.event_type }} {{ row.artifact }}

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
+import os
 from pathlib import Path
 
 from . import __version__
@@ -23,13 +25,26 @@ class CaseContext:
 
 
 def get_case(case_id: str, cases_root: Path = DEFAULT_CASES_ROOT) -> CaseContext:
-    return CaseContext(case_id=case_id, root=cases_root / case_id)
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", case_id):
+        raise ValueError("Case ID must contain only letters, digits, dots, underscores or hyphens")
+    if cases_root.is_symlink():
+        raise ValueError("Cases directory cannot be a symlink")
+    root = cases_root / case_id
+    if root.is_symlink() or any((root / directory).is_symlink() for directory in CASE_DIRS):
+        raise ValueError("Case directories cannot be symlinks")
+    return CaseContext(case_id=case_id, root=root)
 
 
 def create_case(case_id: str, examiner: str, cases_root: Path = DEFAULT_CASES_ROOT) -> CaseContext:
     ctx = get_case(case_id, cases_root)
+    if ctx.root.exists():
+        raise FileExistsError("Case already exists; use a new case ID to preserve evidence")
+    cases_root.mkdir(mode=0o700, parents=True, exist_ok=True)
+    ctx.root.mkdir(mode=0o700)
     for directory in CASE_DIRS:
-        (ctx.root / directory).mkdir(parents=True, exist_ok=True)
+        (ctx.root / directory).mkdir(mode=0o700)
+    if os.name == "posix":
+        ctx.root.chmod(0o700)
 
     manifest = {
         "case_id": case_id,

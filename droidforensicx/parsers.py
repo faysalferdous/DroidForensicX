@@ -46,7 +46,7 @@ def parse_pm_packages(output: str) -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
     for line in output.splitlines():
         line = line.strip()
-        if not line:
+        if not line.startswith("package:"):
             continue
         package = line
         source = ""
@@ -56,7 +56,8 @@ def parse_pm_packages(output: str) -> list[dict[str, str]]:
                 source, package = body.rsplit("=", 1)
             else:
                 package = body
-        rows.append({"package": package.strip(), "source_path": source.strip()})
+        if re.fullmatch(r"[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)*", package.strip()):
+            rows.append({"package": package.strip(), "source_path": source.strip()})
     return rows
 
 

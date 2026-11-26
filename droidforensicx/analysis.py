@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import csv
+import os
+from datetime import UTC, datetime
+from html import escape
 import re
 import shutil
 from collections import Counter, defaultdict
@@ -75,8 +78,21 @@ def import_credentials(ctx: CaseContext, csv_path: Path) -> dict[str, Any]:
     sensitive.mkdir(parents=True, exist_ok=True)
     redacted_dir.mkdir(parents=True, exist_ok=True)
     stored = sensitive / csv_path.name
+    if csv_path.is_symlink() or stored.is_symlink() or not csv_path.is_file():
+        raise ValueError("Use a regular credential export without symlinks")
+    if os.name == "posix":
+        ctx.root.chmod(0o700)
+        sensitive.chmod(0o700)
     if csv_path.resolve() != stored.resolve():
-        shutil.copy2(csv_path, stored)
+        if stored.exists() and sha256_file(stored) != sha256_file(csv_path):
+            raise FileExistsError("A different credential export already has this name")
+        if not stored.exists():
+            with csv_path.open("rb") as source, stored.open("xb") as destination:
+                if os.name == "posix":
+                    os.fchmod(destination.fileno(), 0o600)
+                shutil.copyfileobj(source, destination)
+    if os.name == "posix":
+        stored.chmod(0o600)
     rows = read_csv(stored)
     normalized: list[dict[str, str]] = []
     passwords: dict[str, list[str]] = defaultdict(list)
@@ -87,7 +103,7 @@ def import_credentials(ctx: CaseContext, csv_path: Path) -> dict[str, Any]:
     goals: list[dict[str, str]] = []
     sensitive_terms = ("bank", "mail", "gov", "cloud", "admin", "wallet", "crypto")
     for i, row in enumerate(rows, start=1):
-        lowered = {key.lower().strip(): value for key, value in row.items()}
+        lowered = {key.lower().strip(): value or "" for key, value in row.items() if key is not None}
         url = lowered.get("url") or lowered.get("origin") or lowered.get("website") or lowered.get("hostname") or ""
         username = lowered.get("username") or lowered.get("login") or lowered.get("email") or ""
         password = lowered.get("password") or lowered.get("passwd") or lowered.get("pwd") or ""
@@ -175,6 +191,22 @@ def indicators(ctx: CaseContext) -> dict[str, Any]:
     return summary
 
 
+def timeline_sort_key(value: str) -> tuple[int, float, str]:
+    """Only compare known UTC/offset timestamps; retain uncertain dates as raw text."""
+    raw = str(value).strip()
+    try:
+        if re.fullmatch(r"\d{10}(?:\.\d+)?", raw):
+            return (0, float(raw), "")
+        if re.fullmatch(r"\d{13}", raw):
+            return (0, int(raw) / 1000, "")
+        parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        if parsed.tzinfo is not None:
+            return (0, parsed.astimezone(UTC).timestamp(), "")
+    except (ValueError, OverflowError, OSError):
+        pass
+    return (1, 0.0, raw)
+
+
 def build_timeline(ctx: CaseContext) -> dict[str, Any]:
     events: list[dict[str, str]] = []
     for path, source in (
@@ -189,13 +221,13 @@ def build_timeline(ctx: CaseContext) -> dict[str, Any]:
     if cred_domains.exists():
         for row in read_csv(cred_domains):
             events.append({"timestamp": "", "source": "credentials_import", "event_type": "credential_domain_present", "artifact": row.get("domain", ""), "details": "redacted credential export domain"})
-    events.sort(key=lambda row: row.get("timestamp", ""))
+    events.sort(key=lambda row: timeline_sort_key(row.get("timestamp", "")))
     out = ctx.subdir("12_timeline")
     write_csv(out / "timeline.csv", events, ["timestamp", "source", "event_type", "artifact", "details"])
     md = "# Unified Timeline\n\n" + "\n".join(f"- `{e['timestamp']}` **{e['source']}** {e['event_type']} {e['artifact']}" for e in events[:500]) + "\n"
     (out / "timeline.md").write_text(md, encoding="utf-8")
     html = "<html><body><h1>Unified Timeline</h1><table><tr><th>Time</th><th>Source</th><th>Event</th><th>Artifact</th></tr>" + "".join(
-        f"<tr><td>{e['timestamp']}</td><td>{e['source']}</td><td>{e['event_type']}</td><td>{e['artifact']}</td></tr>" for e in events[:1000]
+        "<tr>" + "".join(f"<td>{escape(str(e[key]))}</td>" for key in ("timestamp", "source", "event_type", "artifact")) + "</tr>" for e in events[:1000]
     ) + "</table></body></html>"
     (out / "timeline.html").write_text(html, encoding="utf-8")
     summary = {"timeline_events": len(events)}
@@ -208,7 +240,7 @@ def hash_case(ctx: CaseContext) -> dict[str, Any]:
     hashes_dir.mkdir(parents=True, exist_ok=True)
     rows = []
     for path in sorted(ctx.root.rglob("*")):
-        if path.is_file() and "13_hashes" not in path.relative_to(ctx.root).parts:
+        if path.is_file() and not path.is_symlink() and "13_hashes" not in path.relative_to(ctx.root).parts:
             rows.append({"sha256": sha256_file(path), "path": str(path.relative_to(ctx.root)), "size": path.stat().st_size})
     (hashes_dir / "SHA256SUMS.txt").write_text("\n".join(f"{row['sha256']}  {row['path']}" for row in rows) + "\n", encoding="utf-8")
     write_json(hashes_dir / "evidence_manifest.json", {"case_id": ctx.case_id, "files": rows})

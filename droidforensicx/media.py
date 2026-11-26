@@ -20,8 +20,8 @@ def scan_media(ctx: CaseContext, input_path: Path | None = None) -> dict[str, An
     for root in roots:
         if not root or not root.exists():
             continue
-        for path in root.rglob("*"):
-            if not path.is_file():
+        for path in ([root] if root.is_file() else root.rglob("*")):
+            if not path.is_file() or path.is_symlink():
                 continue
             digest = sha256_file(path)
             stat = path.stat()
