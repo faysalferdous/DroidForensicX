@@ -120,6 +120,11 @@
   </div>
 
   <section>
+    <h2>Recovery Runs</h2>
+    <p class="note">Counts include recovery candidates and collected files; they do not establish deletion or successful decoding.</p>
+    <table><tr><th>Run</th><th>Mode</th><th>Status</th><th>Files</th></tr>{% for run in recovery_runs %}<tr><td>{{ run.id }}</td><td>{{ run.mode }}</td><td>{{ run.status }}</td><td>{{ run.files }}</td></tr>{% else %}<tr><td colspan="4">No recovery runs recorded.</td></tr>{% endfor %}</table>
+  </section>
+  <section>
     <h2>Unified Timeline</h2>
     <table><tr><th>Timestamp</th><th>Source</th><th>Event</th><th>Artifact</th></tr>{% for row in timeline[:250] %}<tr><td>{{ row.timestamp }}</td><td>{{ row.source }}</td><td>{{ row.event_type }}</td><td>{{ row.artifact }}</td></tr>{% else %}<tr><td colspan="4">No unified timeline events were generated.</td></tr>{% endfor %}</table>
   </section>

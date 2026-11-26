@@ -62,15 +62,28 @@ def tool_path(name: str) -> str | None:
 
 
 def run_command(args: list[str], timeout: int = 60, cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        args,
-        cwd=cwd,
-        text=True,
-        capture_output=True,
-        timeout=timeout,
-        check=False,
-        shell=False,
-    )
+    try:
+        return subprocess.run(
+            args,
+            cwd=cwd,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            capture_output=True,
+            timeout=timeout,
+            check=False,
+            shell=False,
+        )
+    except subprocess.TimeoutExpired as error:
+        stdout = error.stdout or ""
+        stderr = error.stderr or ""
+        if isinstance(stdout, bytes):
+            stdout = stdout.decode("utf-8", errors="replace")
+        if isinstance(stderr, bytes):
+            stderr = stderr.decode("utf-8", errors="replace")
+        return subprocess.CompletedProcess(args, 124, stdout, stderr + "\nCommand timed out")
+    except OSError as error:
+        return subprocess.CompletedProcess(args, 127, "", str(error))
 
 
 def redact_value(key: str, value: Any) -> Any:

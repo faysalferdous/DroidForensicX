@@ -49,14 +49,23 @@ def banner() -> None:
     )
 
 
-def ctx(case: str):
-    return get_case(case)
+def ctx(case: str, require: bool = True):
+    try:
+        result = get_case(case)
+        if require and not result.file("00_case", "case_manifest.json").is_file():
+            raise ValueError("Initialize the case first")
+        return result
+    except (ValueError, OSError) as error:
+        raise typer.BadParameter(str(error)) from error
 
 
 @app.command()
 def init(case: str = typer.Option(..., "--case"), examiner: str = typer.Option(..., "--examiner")) -> None:
     banner()
-    case_ctx = create_case(case, examiner)
+    try:
+        case_ctx = create_case(case, examiner)
+    except (OSError, ValueError) as error:
+        raise typer.BadParameter(str(error)) from error
     console.print(f"[green]+[/green] Case created: {case_ctx.root}")
 
 
@@ -89,7 +98,8 @@ def acquire_basic(case: str = typer.Option(..., "--case")) -> None:
     props = parse_getprop(read_text(ctx(case).file("01_raw_adb", "getprop.txt")))
     identity = {k: props.get(k, "") for k in ["ro.product.manufacturer", "ro.product.model", "ro.build.version.release", "ro.build.fingerprint"]}
     write_json(ctx(case).file("01_raw_adb", "device_identity.json"), identity)
-    console.print(f"[green]+[/green] Basic acquisition complete: {summary}")
+    status = summary.get("status", "partial_or_failed")
+    console.print("Basic acquisition status:", status, summary, markup=False)
 
 
 @app.command()
@@ -133,7 +143,10 @@ def credential_import(case: str = typer.Option(..., "--case"), csv_file: Path = 
     banner()
     if show_sensitive:
         console.print("[yellow]--show-sensitive is a warning placeholder. Raw passwords are never printed in normal reports.[/yellow]")
-    console.print(import_credentials(ctx(case), csv_file))
+    try:
+        console.print(import_credentials(ctx(case), csv_file))
+    except (OSError, ValueError) as error:
+        raise typer.BadParameter(str(error)) from error
 
 
 @app.command("social-import")
@@ -169,7 +182,7 @@ def report(case: str = typer.Option(..., "--case")) -> None:
 @app.command("defence-full")
 def defence_full(case: str = typer.Option(..., "--case"), examiner: str = typer.Option("Unknown", "--examiner")) -> None:
     banner()
-    if not ctx(case).root.exists():
+    if not ctx(case, require=False).root.exists():
         create_case(case, examiner)
     check_device(case)
     acquire_basic(case)
@@ -187,7 +200,10 @@ def defence_full(case: str = typer.Option(..., "--case"), examiner: str = typer.
 @app.command()
 def demo(case: str = typer.Option("DEMO-ANDROID-FORENSIC", "--case")) -> None:
     banner()
-    reports = create_demo(case)
+    try:
+        reports = create_demo(case)
+    except (OSError, ValueError) as error:
+        raise typer.BadParameter(str(error)) from error
     case_ctx = ctx(case)
     risk = case_ctx.file("11_indicators", "risk_summary.json")
     console.print(f"[green]+[/green] Case: {case}")

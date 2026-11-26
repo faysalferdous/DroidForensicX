@@ -30,3 +30,25 @@ def test_deleted_fat_file(tmp_path):
     assert sha256_file(image) == before
     assert any(sha256_file(path) == sha256_file(source)
                for path in (Path(report["run"]) / "sleuthkit").rglob("*") if path.is_file())
+
+
+@pytest.mark.skipif(os.environ.get("DFX_ENGINE_TEST") != "1", reason="opt-in real-engine test")
+def test_real_ffmpeg_remux(tmp_path):
+    from droidforensicx.recovery import salvage_media, verify_run
+    assert shutil.which("ffmpeg") and shutil.which("ffprobe")
+    source = tmp_path / "sample.mp4"
+    subprocess.run(["ffmpeg", "-v", "error", "-f", "lavfi", "-i",
+                    "color=c=blue:s=64x64:r=10", "-t", "1", "-c:v", "mpeg4",
+                    str(source)], check=True, timeout=30)
+    before = sha256_file(source)
+    ctx = create_case("VIDEO", "Examiner", tmp_path / "cases")
+    report = salvage_media(ctx, source, timeout=30)
+    assert report["status"] == "complete"
+    run = Path(report["run"])
+    result = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0",
+                             "-show_entries", "stream=codec_name", "-of", "csv=p=0",
+                             str(run / "salvage" / "salvaged.mkv")],
+                            capture_output=True, text=True, check=True, timeout=30)
+    assert "mpeg4" in result.stdout
+    assert sha256_file(source) == before
+    assert verify_run(ctx, run.name)["status"] == "verified"

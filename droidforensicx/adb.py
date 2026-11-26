@@ -35,6 +35,7 @@ def collect_basic(out_dir: Path, timeout: int = 90) -> dict[str, object]:
     summary: dict[str, object] = {"adb_available": bool(tool_path("adb")), "commands": []}
     if not tool_path("adb"):
         summary["warning"] = "adb not found in PATH"
+        summary["status"] = "partial_or_failed"
         write_json(out_dir / "acquire_basic_summary.json", summary)
         return summary
     commands: list[dict[str, str | int]] = []
@@ -43,6 +44,7 @@ def collect_basic(out_dir: Path, timeout: int = 90) -> dict[str, object]:
         (out_dir / filename).write_text(result.stdout + ("\n[stderr]\n" + result.stderr if result.stderr else ""), encoding="utf-8", errors="replace")
         commands.append({"file": filename, "returncode": result.returncode, "command": " ".join(args)})
     summary["commands"] = commands
+    summary["status"] = "complete" if all(c["returncode"] == 0 for c in commands) else "partial_or_failed"
     write_json(out_dir / "acquire_basic_summary.json", summary)
     return summary
 
@@ -56,7 +58,7 @@ def run_bugreport(out_dir: Path, timeout: int = 600) -> dict[str, object]:
         return summary
     target = out_dir / "bugreport.zip"
     result = run_command(["adb", "bugreport", str(target)], timeout=timeout)
-    summary.update({"returncode": result.returncode, "created": target.exists(), "stdout": result.stdout[-2000:], "stderr": result.stderr[-2000:]})
+    summary.update({"returncode": result.returncode, "created": result.returncode == 0 and target.is_file() and target.stat().st_size > 0, "stdout": result.stdout[-2000:], "stderr": result.stderr[-2000:]})
     write_json(out_dir / "bugreport_summary.json", summary)
     return summary
 

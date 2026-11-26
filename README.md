@@ -310,3 +310,7 @@ Pull requests are welcome. Contributions must preserve:
 ## License
 
 MIT License. See [LICENSE](LICENSE).
+
+## Stability and release checks
+
+New case IDs must be unique. Keep case data private and do not commit evidence. CI includes regression tests, offline FAT recovery and a wheel build/install smoke test. See [recovery guide](docs/recovery.md) for field-test limitations.
