@@ -20,6 +20,7 @@ CASE_DIRS = [
     "12_timeline",
     "13_hashes",
     "14_reports",
+    "15_recovery",
 ]
 
 DEFAULT_CASES_ROOT = Path("cases")
@@ -58,7 +59,7 @@ SUSPICIOUS_APP_KEYWORDS = (
 )
 
 LIMITATIONS = [
-    "DroidForensicX performs authorized logical triage only and does not bypass Android security controls.",
+    "DroidForensicX performs authorized logical triage and offline image recovery and does not bypass Android security controls.",
     "No-root ADB cannot access most app-private databases or guarantee complete deleted-file recovery.",
     "Android does not guarantee a permanent uninstall history; uninstalled app results are confidence-scored traces.",
     "Credential handling imports lawful official exports only and redacts password values by default.",

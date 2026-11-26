@@ -7,7 +7,7 @@ from typing import Any
 
 from .utils import run_command, tool_path, write_json
 
-OPTIONAL_TOOLS = ["adb", "androidqf", "mvt-android", "aleapp", "exiftool", "mediainfo", "photorec", "testdisk", "hashdeep"]
+OPTIONAL_TOOLS = ["adb", "androidqf", "mvt-android", "aleapp", "exiftool", "mediainfo", "photorec", "testdisk", "tsk_recover", "ddrescue", "ffmpeg", "ffprobe", "hashdeep"]
 
 
 def detect_tools() -> dict[str, dict[str, str | bool]]:

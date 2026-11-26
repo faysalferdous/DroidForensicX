@@ -19,6 +19,7 @@ from .external import detect_tools, run_androidqf, run_mvt
 from .media import scan_media
 from .parsers import parse_adb_devices, parse_getprop
 from .reporting import generate_report
+from .recovery import import_export, recover_image
 from .social import import_social
 from .utils import read_text, run_command, tool_path, write_json
 
@@ -192,6 +193,47 @@ def demo(case: str = typer.Option("DEMO-ANDROID-FORENSIC", "--case")) -> None:
     console.print(f"[green]+[/green] Case: {case}")
     console.print(f"[green]+[/green] Report: {reports['report_html']}")
     console.print(f"[green]+[/green] Risk summary: {risk}")
+
+
+@app.command("recover-image")
+def recovery_image_cmd(
+    case: str = typer.Option(..., "--case"),
+    image: Path = typer.Option(..., "--image"),
+    authorized: bool = typer.Option(False, "--authorized"),
+    filesystem: str = typer.Option("other", "--filesystem"),
+    offset: int | None = typer.Option(None, "--offset", min=0),
+    timeout: int = typer.Option(3600, "--timeout", min=1),
+    no_carve: bool = typer.Option(False, "--no-carve"),
+) -> None:
+    """Recover candidates from an authorized offline storage image."""
+    if not authorized:
+        raise typer.BadParameter("Confirm authorization with --authorized")
+    try:
+        result = recover_image(ctx(case), image, timeout=timeout, filesystem=filesystem,
+                               offset=offset, carve=not no_carve)
+    except (ValueError, OSError) as error:
+        raise typer.BadParameter(str(error)) from error
+    console.print("Recovery status:", result["status"], "Files:", result["files"], "Run:", result["run"], markup=False)
+    if result["status"] != "complete":
+        raise typer.Exit(1)
+
+
+@app.command("recover-import")
+def recovery_import_cmd(
+    case: str = typer.Option(..., "--case"),
+    source: Path = typer.Option(..., "--input"),
+    authorized: bool = typer.Option(False, "--authorized"),
+) -> None:
+    """Import an authorized local backup, trash export, or shared file export."""
+    if not authorized:
+        raise typer.BadParameter("Confirm authorization with --authorized")
+    try:
+        result = import_export(ctx(case), source)
+    except (ValueError, OSError) as error:
+        raise typer.BadParameter(str(error)) from error
+    console.print("Import status:", result["status"], "Files:", result["files"], "Run:", result["run"], markup=False)
+    if result["status"] != "complete":
+        raise typer.Exit(1)
 
 
 def main() -> None:
