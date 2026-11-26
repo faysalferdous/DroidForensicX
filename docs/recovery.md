@@ -38,8 +38,9 @@ access app-private trash or cloud accounts.
 
 Repeat --image and --input for multiple explicit sources. The batch summary
 counts unique SHA-256 hashes across child runs. A failed source does not stop
-other sources. Verification checks a child run's files.csv and detects changed
-or missing files; it is not a signed manifest and cannot detect all tampering.
+other sources. Verification checks a child run's manifest digest, row count, listed file hashes,
+and unexpected output files. Legacy runs without the digest require manual review.
+The manifest and digest are not signed and cannot detect coordinated tampering.
 
 ## Authorized device collection and video salvage
 
@@ -106,3 +107,8 @@ Recovery CI runs the unit suite and an opt-in real Sleuth Kit FAT image test.
 Check CI results and complete a separate real PhotoRec and owned-device export
 smoke test before tagging a stable release. No automatic physical acquisition or private app access is provided. Validate
 ADB collection and FFmpeg remux separately with owned devices and synthetic media.
+
+New runs check free space before copying an image, with a minimum 16 MiB reserve.
+This is not a guarantee of capacity for all recovered output. New cases use restricted
+permissions on POSIX and refuse reuse of an existing case ID. Use separate cases for demos.
+Unknown-timezone timeline entries retain their raw timestamp and are grouped after known UTC entries.

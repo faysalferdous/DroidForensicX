@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import os
 import csv
+import json
 from collections import Counter
 import re
 import shutil
@@ -44,7 +45,11 @@ def new_run(ctx: CaseContext) -> Path:
 
 
 def files_under(root: Path):
-    for directory, dirs, files in os.walk(root, followlinks=False):
+    if root.is_symlink():
+        raise ValueError("Unsafe output directory")
+    def fail(error):
+        raise error
+    for directory, dirs, files in os.walk(root, followlinks=False, onerror=fail):
         base = Path(directory)
         dirs[:] = sorted(d for d in dirs if not (base / d).is_symlink())
         for name in sorted(files):
@@ -106,6 +111,7 @@ def finish(run: Path, report: dict[str, Any], roots: list[tuple[str, Path, str]]
         "validation_note": "Basic checks and hashes do not prove completeness or deleted status.",
     })
     write_csv(run / "files.csv", rows, FIELDS)
+    report["manifest_sha256"] = sha256_file(run / "files.csv")
     write_json(run / "recovery_report.json", report)
     return report
 
@@ -143,6 +149,8 @@ def recover_image(ctx: CaseContext, image: Path, *, timeout: int = 3600,
     working = run / "working.img"
     before = sha256_file(source)
     try:
+        if shutil.disk_usage(run).free < source.stat().st_size + 16 * 1024 * 1024:
+            raise OSError("Insufficient free space for working copy and minimum reserve")
         shutil.copyfile(source, working)
         if sha256_file(working) != before:
             raise ValueError("Working copy hash mismatch; source may have changed")
@@ -200,15 +208,18 @@ def import_export(ctx: CaseContext, source: Path) -> dict[str, Any]:
     for path in candidates:
         rel = path.relative_to(source) if source.is_dir() else Path(path.name)
         destination = out / rel
-        destination.parent.mkdir(parents=True, exist_ok=True)
         try:
+            destination.parent.mkdir(parents=True, exist_ok=True)
             before = sha256_file(path)
             shutil.copyfile(path, destination)
             if sha256_file(destination) != before or sha256_file(path) != before:
                 destination.unlink(missing_ok=True)
                 errors.append({"path": str(rel), "error": "hash mismatch or changed source"})
         except OSError as error:
-            destination.unlink(missing_ok=True)
+            try:
+                destination.unlink(missing_ok=True)
+            except OSError:
+                pass
             errors.append({"path": str(rel), "error": str(error)})
     return finish(run, {"mode": "logical_export", "source": str(source),
                         "status": "partial_or_failed" if errors else "complete",
@@ -247,24 +258,54 @@ def recover_all(ctx: CaseContext, images: list[Path], exports: list[Path], *,
 
 
 def verify_run(ctx: CaseContext, run_id: str) -> dict[str, Any]:
-    """Check listed recovered files against the recorded manifest; no writes."""
+    """Verify manifest structure, digest, file hashes and unlisted output files."""
     if not re.fullmatch(r"[a-f0-9]{32}", run_id):
         raise ValueError("Invalid recovery run ID")
     root = ctx.subdir(RECOVERY_DIR)
     run = root / run_id
     manifest = run / "files.csv"
-    if root.is_symlink() or run.is_symlink() or manifest.is_symlink() or not manifest.is_file():
-        raise ValueError("No file manifest for this run")
+    report_path = run / "recovery_report.json"
+    if any(p.is_symlink() for p in (root, run, manifest, report_path)) or not manifest.is_file() or not report_path.is_file():
+        raise ValueError("No safe file manifest for this child run")
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    if not isinstance(report, dict):
+        raise ValueError("Invalid recovery report")
     failures = []
     count = 0
+    seen = set()
+    expected_digest = report.get("manifest_sha256")
+    if not expected_digest or sha256_file(manifest) != expected_digest:
+        failures.append({"reason": "manifest digest missing or mismatched; legacy runs require manual verification"})
     with manifest.open(newline="", encoding="utf-8") as handle:
-        for row in csv.DictReader(handle):
+        reader = csv.DictReader(handle)
+        if reader.fieldnames != FIELDS:
+            raise ValueError("Invalid manifest columns")
+        for row in reader:
             count += 1
-            path = run / row["path"]
-            if not path.resolve().is_relative_to(run.resolve()) or path.is_symlink() or not path.is_file():
-                failures.append({"path": row["path"], "reason": "missing or unsafe path"})
-            elif sha256_file(path) != row["sha256"]:
-                failures.append({"path": row["path"], "reason": "hash mismatch"})
+            rel = row["path"] or ""
+            path = run / rel
+            if not rel or Path(rel).is_absolute() or ".." in Path(rel).parts or rel in seen:
+                failures.append({"path": rel, "reason": "invalid or duplicate manifest path"})
+                continue
+            seen.add(rel)
+            if (not path.resolve().is_relative_to(run.resolve()) or
+                    any(p.is_symlink() for p in (path, *path.parents) if p != run and p.is_relative_to(run))
+                    or not path.is_file()):
+                failures.append({"path": rel, "reason": "missing or unsafe path"})
+                continue
+            if str(path.stat().st_size) != row["size"] or sha256_file(path) != row["sha256"]:
+                failures.append({"path": rel, "reason": "size or hash mismatch"})
+    if count != report.get("files"):
+        failures.append({"reason": "manifest row count mismatch"})
+    for name in ("export", "shared", "salvage", "sleuthkit", "photorec"):
+        directory = run / name
+        if not directory.exists():
+            continue
+        for path in files_under(directory):
+            if name == "photorec" and path.name in {"report.xml", "photorec.log", "photorec.ses"}:
+                continue
+            if path.relative_to(run).as_posix() not in seen:
+                failures.append({"path": path.relative_to(run).as_posix(), "reason": "unlisted output file"})
     return {"status": "failed" if failures else "verified", "checked": count, "failures": failures}
 
 
